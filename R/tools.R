@@ -34,8 +34,8 @@ build_adjacency_matrix <- function(data,
     is.character(source),
     source != "",
     source %in% names(data),
-    msg = paste("source must be a character value reprsents drugs column",
-                "name in drugs_target data.frame")
+    msg = paste("source must be a character value reprsents a valid column",
+                "name in data")
   )
   assertthat::assert_that(
     !missing(target),
@@ -43,8 +43,8 @@ build_adjacency_matrix <- function(data,
     is.character(target),
     target != "",
     target %in% names(data),
-    msg = paste("target must be a character value reprsents drugs column",
-                "name in drugs_target data.frame")
+    msg = paste("target must be a character value reprsents a valid",
+                "name in data")
   )
   # not all drugs has targets, what we will do with other drugs?!!!
   # investigate more later
@@ -54,6 +54,7 @@ build_adjacency_matrix <- function(data,
     spread(!!sym(target), n, drop = FALSE, fill = 0)
 }
 # to get smiles
+# drugs_with_targets <- unique(dbdataset::Targets_Drug$parent_key)
 # smiles <- dbdataset::Calculated_Properties_Drug %>%
 #               filter(kind == "SMILES", parent_key %in% drugs_with_targets)
 # writeLines(smiles$value[[1]], "test.smi")
@@ -64,7 +65,7 @@ build_adjacency_matrix <- function(data,
 # d <- setdiff(drugs_with_targets, small_mol$primary_key)
 #' @export
 calculate_drugs_AIO <- function(smiles) {
-  options("java.parameters"=c("-Xmx12G"))
+  #options("java.parameters"=c("-Xmx12G"))
   which.desc <- c("org.openscience.cdk.qsar.descriptors.molecular.ALOGPDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.APolDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.AminoAcidCountDescriptor",
@@ -77,7 +78,6 @@ calculate_drugs_AIO <- function(smiles) {
                   "org.openscience.cdk.qsar.descriptors.molecular.BCUTDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.BPolDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.BondCountDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.CPSADescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.CarbonTypesDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.ChiChainDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.ChiClusterDescriptor",
@@ -86,35 +86,35 @@ calculate_drugs_AIO <- function(smiles) {
                   "org.openscience.cdk.qsar.descriptors.molecular.EccentricConnectivityIndexDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.FMFDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.FragmentComplexityDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.GravitationalIndexDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.HBondAcceptorCountDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.HBondDonorCountDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.HybridizationRatioDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.IPMolecularLearningDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.KappaShapeIndicesDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.KierHallSmartsDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.LargestChainDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.LargestPiSystemDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.LengthOverBreadthDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.LongestAliphaticChainDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.MDEDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.MannholdLogPDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.MomentOfInertiaDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.PetitjeanNumberDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.PetitjeanShapeIndexDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.RotatableBondsCountDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.RuleOfFiveDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.TPSADescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.VABCDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.VAdjMaDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.WHIMDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.WeightDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.WienerNumbersDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.XLogPDescriptor",
                   "org.openscience.cdk.qsar.descriptors.molecular.ZagrebIndexDescriptor")
-  pb <-  progress::progress_bar$new(total = length(smiles))
-  dplyr::bind_rows(lapply(smiles, calculate_single_smile, which.desc, pb)) %>%
-    tibble::rownames_to_column("smile")
+  # pb <-  progress::progress_bar$new(total = length(smiles))
+  # dplyr::bind_rows(lapply(smiles, calculate_single_smile, which.desc, pb)) %>%
+  #   tibble::rownames_to_column("smile")
+  f <- dplyr::bind_cols(lapply(which.desc, calculate_single_feature, mol))
+}
+
+calculate_single_feature <- function(which.desc, mol) {
+  message(which.desc)
+  rcdk::eval.desc(mol, which.desc)
 }
 
 calculate_single_smile <- function(smile, which.desc, pb) {
@@ -132,8 +132,8 @@ calculate_single_smile <- function(smile, which.desc, pb) {
     if (is.null(f)) {
       f <- data.frame()
     }
-    rJava::.jcall("java/lang/System","V","gc")
-    gc()
+    # rJava::.jcall("java/lang/System","V","gc")
+    # gc()
     f
   },
   error = function(e) {
@@ -141,6 +141,105 @@ calculate_single_smile <- function(smile, which.desc, pb) {
     data.frame()
   })
 }
+
+#' @export
+calculate_targets_features <- function(targets, id_column, sequence_column) {
+  assertthat::assert_that(
+    !missing(targets),
+    !is.null(targets),
+    "data.frame" %in% class(targets),
+    nrow(targets) > 0,
+    msg = "targets must be a data.frame that contains"
+  )
+  assertthat::assert_that(
+    !missing(id_column),
+    !is.null(id_column),
+    is.character(id_column),
+    id_column != "",
+    id_column %in% names(targets),
+    msg = paste("id_column must be a character value reprsents targets id column",
+                "name in targets dataframe")
+  )
+  assertthat::assert_that(
+    !missing(sequence_column),
+    !is.null(sequence_column),
+    is.character(sequence_column),
+    sequence_column != "",
+    sequence_column %in% names(targets),
+    msg = paste("sequence_column must be a character value reprsents sequences column",
+                "name in targets dataframe")
+  )
+  # targets <- dbdataset::Polypeptide_Target_Drug %>% dplyr::select(target_id = parent_id, amino_acid_sequence)
+  # sequence_column <- "amino_acid_sequence"
+  # targets_features <- targets %>% inner_join(features, by = c("amino_acid_sequence", "sequence"))
+  new_targets <- targets %>%
+    dplyr::select(!!sym(id_column), !!sym(sequence_column))
+  new_targets[[sequence_column]] <- sapply(new_targets[[sequence_column]], clean_sequence)
+  pb <-  progress::progress_bar$new(total = nrow(new_targets))
+  features <- dplyr::bind_rows(apply(new_targets,
+                                     1,
+                                     calculate_sequence_features,
+                                     pb))
+}
+
+clean_sequence <- function (sequence) {
+  lines <- strsplit(sequence, "\n")[[1]]
+  ind <- which(substr(lines, 1L, 1L) == ">")
+  nseq <- length(ind)
+  if (nseq == 0) {
+    stop("no line starting with a > character found")
+  }
+  start <- ind + 1
+  end <- ind - 1
+  end <- c(end[-1], length(lines))
+  lapply(seq_len(nseq), function(i) paste(lines[start[i]:end[i]],
+                                          collapse = ""))[[1]]
+}
+
+calculate_sequence_features <- function(target_row, pb) {
+    pb$tick()
+    sequence <- target_row[2]
+    if (!protr::protcheck(sequence)) {
+      message(paste("This sequence:",
+                    sequence,
+                    "is invalid. Skipping Process."))
+      return(data.frame())
+    }
+    tryCatch({
+      f <- data.frame(
+        taret_id = target_row[1],
+        sequence,
+        t(protr::extractAAC(sequence)),
+        t(protr::extractDC(sequence)),
+        t(protr::extractTC(sequence)),
+        t(protr::extractCTDC(sequence)),
+        #t(protr::extractCTDCClass(sequence)),
+        t(protr::extractCTDT(sequence)),
+        #t(protr::extractCTDTClass(sequence)),
+        t(protr::extractCTDD(sequence)),
+        #t(protr::extractCTDDClass(sequence)),
+        t(protr::extractCTriad(sequence)),
+        #t(protr::extractCTriadClass(sequence)),
+        t(protr::extractSOCN(sequence)),
+        t(protr::extractQSO(sequence)),
+        t(protr::extractPAAC(sequence)),
+        t(protr::extractAPAAC(sequence))
+      )
+      if (length(sequence) > 30) {
+        f <- cbind(f, t(protr::extractMoreauBroto(sequence)))
+        f <- cbind(f, t(protr::extractMoran(sequence)))
+        f <- cbind(f, t(protr::extractGeary(sequence)))
+      }
+      f
+    },
+    error = function(e) {
+      message(paste("Could not process sequence:",
+                    target_row[2],
+                    "due to:",
+                    e$message))
+      data.frame()
+    })
+  }
 
 # library(dplyr)
 # drugs_with_targets <- unique(dbdataset::Targets_Drug$parent_key)
@@ -153,3 +252,6 @@ calculate_single_smile <- function(smile, which.desc, pb) {
 # drugs_features <- smiles %>%
 #   select(drug_id = parent_key, smile = value) %>%
 #   inner_join(f)
+
+# amin <- dbdataset::Polypeptide_Target_Drug$amino_acid_sequence[[1]]
+# protr::extractAAC(protr::readFASTA("test.fasta")[[1]])

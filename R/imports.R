@@ -1,4 +1,5 @@
 #' @import dplyr
+#' @import protr
 #' @import tidyr
 #' @importFrom assertthat assert_that
 #' @importFrom progress progress_bar
