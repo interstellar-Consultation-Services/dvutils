@@ -110,6 +110,11 @@ calculate_drugs_AIO <- function(smiles) {
   # dplyr::bind_rows(lapply(smiles, calculate_single_smile, which.desc, pb)) %>%
   #   tibble::rownames_to_column("smile")
   f <- dplyr::bind_cols(lapply(which.desc, calculate_single_feature, mol))
+  # drop NA columns (for now)
+  f$geomShape <- NULL
+  # drop 0s only columns
+  zeros <- ifelse(sapply(f, function(x)all(x==0)) == TRUE, T,F)
+  f[zeros] <- NULL
 }
 
 calculate_single_feature <- function(which.desc, mol) {
