@@ -2,7 +2,11 @@
 
 export(build_adjacency_matrix)
 export(calculate_drugs_AIO)
+export(calculate_targets_features)
+export(drug_descriptors_names)
+export(drug_descriptors_types)
 import(dplyr)
+import(protr)
 import(tidyr)
 importFrom(assertthat,assert_that)
 importFrom(progress,progress_bar)
