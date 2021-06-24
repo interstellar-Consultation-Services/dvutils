@@ -10,24 +10,21 @@ drug_descriptors_names <- function(type = "all") {
 }
 
 #' @export
-calculate_drugs_AIO <- function(smiles, which.desc) {
+calculate_drugs_AIO <- function(smiles, id_column, smile_column, which.desc) {
   #asserts and dynamic columns
   f <- data.frame()
+  sm <- smiles %>% dplyr::select(!!rlang::sym(smile_column)) %>% pull()
+  id <- smiles %>% dplyr::select(!!rlang::sym(id_column)) %>% pull()
   for (i in 1:nrow(smiles)) {
-    message(paste0("smile #", i))
-    f <- f %>% dplyr::bind_rows(calculate_smile_features(smiles$value[[i]],
-                                                          smiles$parent_key[[i]],
-                                                          which.desc))
+    f <- f %>% dplyr::bind_rows(calculate_smile_features(sm[i],
+                                                         id[i],
+                                                         which.desc))
   }
+  f[ifelse(sapply(f, function(x)all(is.na(x))) == TRUE, TRUE, FALSE)] <- NULL
+  f[ifelse(sapply(f, function(x)all(is.nan(x))) == TRUE, TRUE, FALSE)] <- NULL
+  f[ifelse(sapply(f, function(x)all(x==0)) == TRUE, TRUE, FALSE)] <- NULL
+  rownames(f) <- f[["drug"]]
   f
-  # f <- dplyr::bind_cols(lapply(which.desc, calculate_single_feature, mol))
-  # # drop NA columns (for now)
-  # f$geomShape <- NULL
-  # # drop 0s only columns
-  # zeros <- ifelse(sapply(f, function(x)all(x==0)) == TRUE, T,F)
-  # f[zeros] <- NULL
-  # # 6. impute NAs with 0 (until I ask Ali about this)
-  # f[is.na(f)] <- 0
 }
 
 calculate_smile_features <- function(smile, drug_id, which.desc) {
