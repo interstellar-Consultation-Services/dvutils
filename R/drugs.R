@@ -23,6 +23,7 @@ calculate_drugs_AIO <- function(smiles, id_column, smile_column, which.desc) {
   f[ifelse(sapply(f, function(x)all(is.na(x))) == TRUE, TRUE, FALSE)] <- NULL
   f[ifelse(sapply(f, function(x)all(is.nan(x))) == TRUE, TRUE, FALSE)] <- NULL
   f[ifelse(sapply(f, function(x)all(x==0)) == TRUE, TRUE, FALSE)] <- NULL
+  f<- f %>% mutate(across(everything(), .fns = ~tidyr::replace_na(.,0)))
   rownames(f) <- f[["drug"]]
   f
 }
