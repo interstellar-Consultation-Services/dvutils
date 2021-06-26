@@ -18,34 +18,36 @@
 #'                          targets = "id")
 #' }
 #' @export
-build_adjacency_matrix <- function(data,
-                                   source,
-                                   target) {
+build_adjacency_matrix <- function(data, source, target) {
   assertthat::assert_that(
     !missing(data),
     !is.null(data),
     "data.frame" %in% class(data),
     nrow(data) > 0,
-    msg = "data must be a data.frame that contains"
+    ncol(data) >= 2,
+    msg = "data must be a dataframe that contains at least two columns"
   )
+
   assertthat::assert_that(
     !missing(source),
     !is.null(source),
     is.character(source),
+    length(source) == 1,
     source != "",
     source %in% names(data),
-    msg = paste("source must be a character value reprsents a valid column",
-                "name in data")
+    msg = "source must be a character value reprsents a valid data column name"
   )
+
   assertthat::assert_that(
     !missing(target),
-    !is.null(source),
+    !is.null(target),
     is.character(target),
+    length(target) == 1,
     target != "",
     target %in% names(data),
-    msg = paste("target must be a character value reprsents a valid",
-                "name in data")
+    msg ="target must be a character value reprsents a valid data column name"
   )
+
   # not all drugs has targets, what we will do with other drugs?!!!
   # investigate more later
   data %>%
@@ -53,74 +55,19 @@ build_adjacency_matrix <- function(data,
     tally() %>%
     spread(!!sym(target), n, drop = FALSE, fill = 0)
 }
-# to get smiles
-# drugs_with_targets <- unique(dbdataset::Targets_Drug$parent_key)
-# smiles <- dbdataset::Calculated_Properties_Drug %>%
-#               filter(kind == "SMILES", parent_key %in% drugs_with_targets)
-# writeLines(smiles$value[[1]], "test.smi")
-# smi = "test.smi"
-# mol <- Rcpi::extractDrugAIO(Rcpi::readMolFromSmi(smi))
-# there are 440 bioteck drug with smiles
-# small_mol <- dbdataset::Drugs %>% filter(type == "small molecule")
-# d <- setdiff(drugs_with_targets, small_mol$primary_key)
-#' @export
-calculate_drugs_AIO <- function(smiles) {
-  #options("java.parameters"=c("-Xmx12G"))
-  which.desc <- c("org.openscience.cdk.qsar.descriptors.molecular.ALOGPDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.APolDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.AminoAcidCountDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.AromaticAtomsCountDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.AromaticBondsCountDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.AtomCountDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.AutocorrelationDescriptorCharge",
-                  "org.openscience.cdk.qsar.descriptors.molecular.AutocorrelationDescriptorMass",
-                  "org.openscience.cdk.qsar.descriptors.molecular.AutocorrelationDescriptorPolarizability",
-                  "org.openscience.cdk.qsar.descriptors.molecular.BCUTDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.BPolDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.BondCountDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.CarbonTypesDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.ChiChainDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.ChiClusterDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.ChiPathClusterDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.ChiPathDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.EccentricConnectivityIndexDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.FMFDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.FragmentComplexityDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.HBondAcceptorCountDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.HBondDonorCountDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.HybridizationRatioDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.KappaShapeIndicesDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.KierHallSmartsDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.LargestChainDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.LargestPiSystemDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.LongestAliphaticChainDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.MDEDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.MannholdLogPDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.PetitjeanNumberDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.PetitjeanShapeIndexDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.RotatableBondsCountDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.RuleOfFiveDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.TPSADescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.VAdjMaDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.WeightDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.WienerNumbersDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.XLogPDescriptor",
-                  "org.openscience.cdk.qsar.descriptors.molecular.ZagrebIndexDescriptor")
-  # pb <-  progress::progress_bar$new(total = length(smiles))
-  # dplyr::bind_rows(lapply(smiles, calculate_single_smile, which.desc, pb)) %>%
-  #   tibble::rownames_to_column("smile")
-  f <- dplyr::bind_cols(lapply(which.desc, calculate_single_feature, mol))
-  # drop NA columns (for now)
-  f$geomShape <- NULL
-  # drop 0s only columns
-  zeros <- ifelse(sapply(f, function(x)all(x==0)) == TRUE, T,F)
-  f[zeros] <- NULL
-}
 
 calculate_single_feature <- function(which.desc, mol) {
   message(which.desc)
   rcdk::eval.desc(mol, which.desc)
 }
+# f <- data.frame()
+# for (i in 1:nrow(smiles)) {
+#   message(paste0("smile #", i))
+#   f <- f %>% dplyr::bind_rows(calculate_single_3D_smile(smiles$value[[i]],
+#                                                                          smiles$parent_key[[i]],
+#                                                                          which.desc))
+# }
+
 
 calculate_single_smile <- function(smile, which.desc, pb) {
   pb$tick()
