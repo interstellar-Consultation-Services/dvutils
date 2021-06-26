@@ -26,11 +26,10 @@ drug_descriptors_categories <- function() {
 #' }
 #' @export
 drug_descriptors_names <- function(category = "all") {
-
-  if (all(!missing(category),
-          !is.null(category),
-          is.character(category),
-          all(category) %in% c("all",drug_descriptors_categories()))) {
+  if (!all(!missing(category),
+           !is.null(category),
+           is.character(category),
+           all(category %in% c("all",drug_descriptors_categories())))) {
     warning(paste("category must be 'all' or value(s) from",
                   "drug_descriptors_categories() returned values.",
                   "Setting default value 'all'"))
