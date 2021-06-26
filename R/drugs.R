@@ -1,12 +1,43 @@
+#' Returns drugs descriptors categories that can be used to calculate drugs
+#' features.
+#'
+#' Each category contains list of descriptors
+#'
+#' @return character vector of available descriptors categories
+#' @examples
+#' \dontrun{
+#'   drug_descriptors_names(drug_descriptors_categories()[1])
+#' }
 #' @export
-drug_descriptors_types <- function() {
+drug_descriptors_categories <- function() {
   rcdk::get.desc.categories()
 }
 
+#' Returns drugs descriptors names that can be used to calculate drugs
+#' features.
+#'
+#' @param category character value represents one of
+#' \code{drug_descriptors_categories}
+#' @return character vector of given descriptor category names
+#' @examples
+#' \dontrun{
+#'   # calculate all available drugs features
+#'   calculate_drugs_AIO(drug_descriptors_names())
+#' }
 #' @export
-drug_descriptors_names <- function(type = "all") {
-  # assert type
-  rcdk::get.desc.names(type)
+drug_descriptors_names <- function(category = "all") {
+
+  if (all(!missing(category),
+          !is.null(category),
+          is.character(category),
+          all(category) %in% c("all",drug_descriptors_categories()))) {
+    warning(paste("category must be 'all' or value(s) from",
+                  "drug_descriptors_categories() returned values.",
+                  "Setting default value 'all'"))
+    category <- "all"
+  }
+
+  rcdk::get.desc.names(category)
 }
 
 #' @export
@@ -23,7 +54,7 @@ calculate_drugs_AIO <- function(smiles, id_column, smile_column, which.desc) {
   f[ifelse(sapply(f, function(x)all(is.na(x))) == TRUE, TRUE, FALSE)] <- NULL
   f[ifelse(sapply(f, function(x)all(is.nan(x))) == TRUE, TRUE, FALSE)] <- NULL
   f[ifelse(sapply(f, function(x)all(x==0)) == TRUE, TRUE, FALSE)] <- NULL
-  f<- f %>% mutate(across(everything(), .fns = ~tidyr::replace_na(.,0)))
+  # f<- f %>% mutate(across(everything(), .fns = ~tidyr::replace_na(.,0)))
   rownames(f) <- f[["drug"]]
   f
 }
@@ -48,7 +79,7 @@ calculate_smile_features <- function(smile, drug_id, which.desc) {
   },
 
   error = function(e) {
-    return(NA)
+    NA
   })
 }
 

@@ -60,13 +60,6 @@ calculate_single_feature <- function(which.desc, mol) {
   message(which.desc)
   rcdk::eval.desc(mol, which.desc)
 }
-# f <- data.frame()
-# for (i in 1:nrow(smiles)) {
-#   message(paste0("smile #", i))
-#   f <- f %>% dplyr::bind_rows(calculate_single_3D_smile(smiles$value[[i]],
-#                                                                          smiles$parent_key[[i]],
-#                                                                          which.desc))
-# }
 
 
 calculate_single_smile <- function(smile, which.desc, pb) {
